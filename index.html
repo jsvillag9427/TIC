@@ -30,15 +30,25 @@
         .animate-bounce-slow { animation: bounce-slow 3s ease-in-out infinite; }
         
         @media print {
+            @page { 
+                size: landscape; 
+                margin: 0; 
+            }
+            body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
             body * { visibility: hidden; }
             #certificate-area, #certificate-area * { visibility: visible; }
             #certificate-area {
                 position: absolute;
-                left: 50%;
-                top: 50%;
-                transform: translate(-50%, -50%) scale(0.9);
+                left: 0;
+                top: 0;
                 width: 100%;
+                height: 100vh;
                 margin: 0;
+                transform: none;
+                box-sizing: border-box;
             }
             .no-print { display: none !important; }
         }
@@ -587,14 +597,15 @@
           }, [examTaken]);
 
           const handleAnswer = (optIndex) => {
+            if (answers[currentQ] !== null) return; // Evitar que cambien la respuesta
             const newAnswers = [...answers];
             newAnswers[currentQ] = optIndex;
             setAnswers(newAnswers);
-            
-            if (currentQ < 19) {
-              setTimeout(() => setCurrentQ(currentQ + 1), 300);
-            }
           };
+
+          const hasAnsweredCurrent = answers[currentQ] !== null;
+          const correctAns = examQuestions[currentQ].ans;
+          const userAns = answers[currentQ];
 
           const finishExam = () => {
             if (answers.includes(null)) {
@@ -667,20 +678,43 @@
                 </h3>
 
                 <div className="space-y-4">
-                  {examQuestions[currentQ].opts.map((opt, idx) => (
-                    <button 
-                      key={idx}
-                      onClick={() => handleAnswer(idx)}
-                      className={`w-full text-left p-5 rounded-xl border-2 transition-all font-medium text-lg ${
-                        answers[currentQ] === idx 
-                          ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200' 
-                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:border-blue-400 hover:shadow-md'
-                      }`}
-                    >
-                      {opt}
-                    </button>
-                  ))}
+                  {examQuestions[currentQ].opts.map((opt, idx) => {
+                    let btnClass = 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:border-blue-400 hover:shadow-md';
+                    
+                    if (hasAnsweredCurrent) {
+                      if (idx === correctAns) {
+                        btnClass = 'border-green-500 bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200';
+                      } else if (idx === userAns) {
+                        btnClass = 'border-red-500 bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200';
+                      } else {
+                        btnClass = 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/30 text-gray-400 dark:text-gray-500 opacity-50 cursor-default';
+                      }
+                    }
+
+                    return (
+                      <button 
+                        key={idx}
+                        onClick={() => handleAnswer(idx)}
+                        disabled={hasAnsweredCurrent}
+                        className={`w-full text-left p-5 rounded-xl border-2 transition-all font-medium text-lg flex justify-between items-center ${btnClass}`}
+                      >
+                        <span>{opt}</span>
+                        {hasAnsweredCurrent && idx === correctAns && <i className="fa-solid fa-circle-check text-2xl text-green-600 dark:text-green-400"></i>}
+                        {hasAnsweredCurrent && idx === userAns && idx !== correctAns && <i className="fa-solid fa-circle-xmark text-2xl text-red-600 dark:text-red-400"></i>}
+                      </button>
+                    );
+                  })}
                 </div>
+
+                {hasAnsweredCurrent && (
+                  <div className={`mt-6 p-4 rounded-xl font-bold flex items-center gap-3 animate-fade-in ${userAns === correctAns ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400' : 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'}`}>
+                      {userAns === correctAns ? (
+                          <><i className="fa-solid fa-star text-xl flex-shrink-0"></i> ¡Correcto! Excelente trabajo.</>
+                      ) : (
+                          <><i className="fa-solid fa-circle-info text-xl flex-shrink-0"></i> Incorrecto. La correcta era: {examQuestions[currentQ].opts[correctAns]}</>
+                      )}
+                  </div>
+                )}
 
                 <div className="flex justify-between mt-10 pt-6 border-t border-gray-100 dark:border-gray-700">
                   <button 
@@ -696,7 +730,7 @@
                       onClick={() => setCurrentQ(currentQ + 1)}
                       className="bg-gray-800 hover:bg-black dark:bg-gray-200 dark:hover:bg-white text-white dark:text-black px-6 py-2 rounded-xl font-bold transition"
                     >
-                      Omitir / Siguiente
+                      {hasAnsweredCurrent ? "Siguiente" : "Omitir"}
                     </button>
                   ) : (
                     <button 
@@ -897,3 +931,4 @@
     </script>
 </body>
 </html>
+
