@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explorando el Mundo de las TIC</title>
+    
+    <!-- Tailwind CSS para los estilos modernos -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    
+    <!-- FontAwesome para los íconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- React y ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel para compilar el código React en el navegador -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        @keyframes fade-in { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fade-in 0.6s ease-out forwards; }
+        @keyframes bounce-slow { 0%, 100% { transform: translateY(-5%); } 50% { transform: translateY(0); } }
+        .animate-bounce-slow { animation: bounce-slow 3s ease-in-out infinite; }
+        
+        @media print {
+            body * { visibility: hidden; }
+            #certificate-area, #certificate-area * { visibility: visible; }
+            #certificate-area {
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%) scale(0.9);
+                width: 100%;
+                margin: 0;
+            }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 transition-colors duration-300">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback } = React;
+
+        // --- DATOS DE LA APLICACIÓN ---
+        const componentesData = [
+          {
+            id: 'hw', icon: <i className="fa-solid fa-microchip text-2xl"></i>, title: "Hardware",
+            content: "El hardware comprende todos los elementos físicos y tangibles que conforman un sistema informático o de telecomunicaciones. Piensa en él como el 'cuerpo' de la tecnología. A lo largo de la historia, hemos pasado de computadoras que ocupaban habitaciones enteras a dispositivos que caben en la palma de nuestra mano. En el contexto educativo y profesional actual, el hardware incluye desde los servidores gigantes que almacenan datos globales hasta tu smartphone, tablet, tarjeta gráfica (GPU) o el router de tu casa.\n\nSin un hardware potente y adaptado, las innovaciones en software no podrían ejecutarse. Por ejemplo, los videojuegos modernos o las aplicaciones de inteligencia artificial requieren procesadores y memorias muy avanzadas. Entender el hardware te permite tomar decisiones informadas al comprar un equipo, saber cómo cuidarlo para evitar la basura electrónica (e-waste) y comprender las limitaciones físicas de la tecnología que usas a diario. Su evolución constante busca siempre la miniaturización, la eficiencia energética y la mayor capacidad de procesamiento.",
+            examples: "Smartphones, placas base, SSDs, procesadores Intel/AMD, periféricos."
+          },
+          {
+            id: 'sw', icon: <i className="fa-solid fa-display text-2xl"></i>, title: "Software",
+            content: "El software es el conjunto de instrucciones, programas y reglas informáticas que permiten al hardware funcionar. Es la 'mente' del dispositivo. A diferencia del hardware, el software es intangible; no lo puedes tocar, pero interactúas con él todo el tiempo. Desde el sistema operativo (como Windows, Android o iOS) que gestiona los recursos de la máquina, hasta las aplicaciones que descargas para editar fotos, jugar o chatear.\n\nEl desarrollo de software es una de las industrias más grandes y lucrativas del mundo. Los lenguajes de programación son los idiomas que usamos para crear este software, y aprenderlos te otorga un superpoder en el siglo XXI. Además, existe un gran debate y movimiento en torno al software libre (donde el código fuente es público y colaborativo) versus el software privativo. Entender el software es crucial porque define la interfaz, la seguridad de tus datos y las herramientas que tienes a tu disposición para crear, aprender y comunicarte en el mundo digital.",
+            examples: "Sistemas operativos, navegadores, videojuegos, apps móviles, antivirus."
+          },
+          {
+            id: 'red', icon: <i className="fa-solid fa-globe text-2xl"></i>, title: "Redes e Internet",
+            content: "Las redes de computadoras son sistemas interconectados que permiten a diferentes dispositivos comunicarse y compartir información y recursos. El máximo exponente de esto es Internet, una 'red de redes' a nivel global. Antes de Internet, la información estaba aislada; hoy, la fibra óptica que cruza los océanos y los satélites en órbita nos permiten enviar un mensaje a Japón en milisegundos. Esta infraestructura es el pilar de la globalización moderna.\n\nEntender cómo funcionan las redes (direcciones IP, routers, protocolos TCP/IP) es vital para diagnosticar problemas de conexión y comprender por qué algunas páginas cargan rápido y otras no. Además, la evolución desde el 3G al 5G ha revolucionado cómo consumimos contenido, permitiendo el streaming de video en alta definición desde cualquier lugar. Sin embargo, esta hiperconectividad también trae desafíos en ciberseguridad, ya que cualquier dispositivo conectado a una red es potencialmente vulnerable a ataques externos.",
+            examples: "Wi-Fi, 5G, fibra óptica, redes LAN/WAN, protocolos de comunicación."
+          },
+          {
+            id: 'nube', icon: <i className="fa-solid fa-cloud text-2xl"></i>, title: "La Nube (Cloud)",
+            content: "La 'Nube' o Cloud Computing es la entrega de servicios informáticos a través de Internet. En lugar de guardar tus archivos en el disco duro de tu computadora local o instalar programas pesados, utilizas servidores remotos operados por grandes empresas (como Google, Amazon o Microsoft) para almacenar, procesar y gestionar datos. Esto significa que puedes acceder a tus fotos, documentos o partidas de videojuegos desde cualquier dispositivo del mundo, siempre que tengas conexión a internet.\n\nPara los estudiantes y profesionales, la nube ha revolucionado el trabajo colaborativo. Ahora puedes editar un documento de texto simultáneamente con tus compañeros de clase sin tener que enviarlo por correo. Además, democratiza el acceso a tecnología de punta: empresas pequeñas pueden usar supercomputadoras alquilando poder de procesamiento en la nube por horas. No obstante, la nube plantea serias preguntas sobre la privacidad de los datos: ¿quién tiene realmente el control de tu información cuando está almacenada en el servidor de una corporación extranjera?",
+            examples: "Google Drive, iCloud, Netflix (usa AWS), Microsoft Azure, Dropbox."
+          },
+          {
+            id: 'ia', icon: <i className="fa-solid fa-brain text-2xl"></i>, title: "Inteligencia Artificial",
+            content: "La Inteligencia Artificial (IA) es la rama de la informática dedicada a crear sistemas capaces de realizar tareas que normalmente requieren inteligencia humana. Esto incluye el aprendizaje automático (Machine Learning), el procesamiento del lenguaje natural, el reconocimiento visual y la toma de decisiones. Desde los algoritmos que deciden qué video te recomienda TikTok, hasta asistentes virtuales como ChatGPT o Siri, la IA está redefiniendo nuestra interacción con las máquinas.\n\nPara los jóvenes, la IA representa tanto la mayor oportunidad como el mayor desafío ético del futuro. Su capacidad para analizar millones de datos en segundos permite avances en medicina, ciencias y educación personalizada. Sin embargo, también levanta alarmas sobre la privacidad, el desplazamiento de empleos tradicionales y la creación de contenido falso (Deepfakes). Aprender a usar la IA como una herramienta de apoyo, manteniendo un espíritu crítico sobre sus respuestas y sesgos, es la competencia digital más importante de esta década.",
+            examples: "ChatGPT, algoritmos de recomendación, conducción autónoma, reconocimiento facial."
+          }
+        ];
+
+        const usoResponsableData = [
+          {
+            title: "Huella Digital",
+            content: [
+              "Cada vez que subes una foto, comentas en un foro, haces una búsqueda o simplemente aceptas cookies en un sitio web, dejas un rastro. A este rastro permanente se le llama Huella Digital. A diferencia de las huellas en la arena, tu huella en internet no se borra con el tiempo. Las empresas utilizan esta información para crear un perfil detallado sobre tus gustos, ideologías y hábitos, lo que les permite enviarte publicidad hiperpersonalizada.",
+              "Es crucial que gestiones tu huella digital de manera consciente. En el futuro, universidades o empleadores podrían buscar tu nombre en internet antes de aceptarte. Una huella digital positiva (como participar en foros educativos o crear contenido creativo) puede abrirte puertas, mientras que comentarios inapropiados o fotos comprometedoras del pasado pueden cerrarlas. Recuerda: en internet, 'borrar' casi nunca significa desaparecer por completo."
+            ],
+            scenario: "Un amigo sube una foto tuya haciendo una broma pesada en el colegio y te etiqueta. ¿Qué haces?",
+            options: [
+              { text: "La dejo, es graciosa y me dará likes.", isCorrect: false, feedback: "Incorrecto. Esa foto formará parte de tu huella digital y podría ser malinterpretada en el futuro por profesores o empleadores." },
+              { text: "Le pido por favor que la borre para proteger mi imagen digital.", isCorrect: true, feedback: "¡Excelente! Tienes derecho a controlar tu imagen. Pedir que la borren es cuidar tu huella digital." },
+              { text: "Subo una peor de él para vengarme.", isCorrect: false, feedback: "Incorrecto. Esto solo empeora la situación y arruina la huella digital de ambos." }
+            ]
+          },
+          {
+            title: "Fake News (Noticias Falsas)",
+            content: [
+              "Las 'Fake News' o noticias falsas son informaciones fabricadas y publicadas deliberadamente para engañar, manipular o generar dinero a través de clics. Con la viralidad de las redes sociales, una mentira puede viajar por el mundo antes de que la verdad tenga tiempo de ponerse los zapatos. A menudo apelan a nuestras emociones más fuertes, como la indignación o el miedo, para que las compartamos sin pensar.",
+              "Para combatir la desinformación, debes convertirte en un detective digital. Verifica siempre la fuente de la información, revisa la fecha de publicación (a veces comparten noticias de hace años como si fueran actuales), y busca si otros medios confiables están reportando lo mismo. Herramientas como la búsqueda inversa de imágenes te pueden ayudar a descubrir si una foto fue manipulada o sacada de contexto. No compartas por impulso."
+            ],
+            scenario: "Ves en TikTok un video que asegura que el gobierno regalará computadores si haces clic en un enlace de WhatsApp. ¿Qué haces?",
+            options: [
+              { text: "Lo comparto en el grupo del colegio para que todos aprovechen.", isCorrect: false, feedback: "¡Peligro! Ayudaste a propagar una noticia falsa y posiblemente un virus (phishing)." },
+              { text: "Hago clic rápido para ser el primero.", isCorrect: false, feedback: "Cuidado. Ese enlace probablemente robará tus datos o infectará tu teléfono." },
+              { text: "Dudo de la información, busco en noticias oficiales y no hago clic.", isCorrect: true, feedback: "¡Correcto! El pensamiento crítico es tu mejor escudo contra las Fake News y el Phishing." }
+            ]
+          },
+          {
+            title: "Ciberacoso (Cyberbullying)",
+            content: [
+              "El ciberacoso es el uso de las tecnologías de la información para acosar, amenazar, humillar o molestar a otra persona. A diferencia del bullying tradicional, el ciberacoso no termina cuando suena la campana del colegio; puede ocurrir las 24 horas del día y llegar a un público masivo instantáneamente. Puede tomar la forma de mensajes crueles, exclusión de grupos, creación de perfiles falsos o difusión de rumores.",
+              "Si eres víctima o testigo de ciberacoso, la regla de oro es: no responder, guardar evidencias (capturas de pantalla), bloquear al acosador y reportarlo a un adulto de confianza o a las autoridades de la plataforma. Ser un espectador pasivo que se ríe de los memes hirientes te hace cómplice. Debemos fomentar la empatía digital y recordar que detrás de cada avatar hay una persona real con sentimientos reales."
+            ],
+            scenario: "Ves que en un grupo de WhatsApp están haciendo memes ofensivos sobre una compañera de clase. ¿Qué deberías hacer?",
+            options: [
+              { text: "Reírme pero no enviar nada, para no meterme en problemas.", isCorrect: false, feedback: "El silencio te hace cómplice pasivo. Tu inacción permite que el acoso continúe." },
+              { text: "Tomar capturas, salir del grupo y avisar a un profesor o coordinador.", isCorrect: true, feedback: "¡Muy bien! Estás protegiendo a la víctima y rompiendo la cadena de acoso de forma segura." },
+              { text: "Insultar a los que envían los memes.", isCorrect: false, feedback: "Aunque tu intención es buena, responder con más agresión no soluciona el problema y genera más conflicto." }
+            ]
+          }
+        ];
+
+        const examQuestions = [
+          { q: "¿Qué significa la sigla TIC?", opts: ["Técnicas de Información y Comunicación", "Tecnologías de la Información y la Comunicación", "Teorías Informáticas de Computación", "Tecnología, Internet y Celulares"], ans: 1 },
+          { q: "El teclado, el monitor y el procesador son ejemplos de:", opts: ["Software", "Hardware", "Nube", "Protocolos"], ans: 1 },
+          { q: "Un sistema operativo como Android o Windows es:", opts: ["Un componente físico", "Software de sistema", "Una red de computadoras", "Inteligencia Artificial pura"], ans: 1 },
+          { q: "¿Cuál es la principal característica de la 'Nube' (Cloud)?", opts: ["Los datos están en el cielo", "Es un disco duro externo físico", "Permite acceder a servicios y datos por internet", "Solo funciona si llueve"], ans: 2 },
+          { q: "El rastro permanente que dejas al navegar por internet se llama:", opts: ["Rastreador GPS", "Huella Digital", "Historial local", "Cookies temporales"], ans: 1 },
+          { q: "¿Qué es el phishing?", opts: ["Un deporte acuático digital", "Engañar a alguien para que revele datos personales", "Crear memes en foros", "Un tipo de hardware de red"], ans: 1 },
+          { q: "Si ves una noticia impactante en redes sociales, ¿qué debes hacer antes de compartirla?", opts: ["Compartirla rápido para ganar likes", "Revisar los comentarios para ver si es real", "Verificar la fuente y buscar en medios confiables", "Preguntarle a un amigo"], ans: 2 },
+          { q: "¿Cuál es la regla de oro si sufres ciberacoso?", opts: ["Vengarte", "Borrar tus cuentas de inmediato", "No responder, guardar evidencia y avisar a un adulto", "Ignorarlo para siempre"], ans: 2 },
+          { q: "El Machine Learning es una rama de:", opts: ["El desarrollo de hardware", "La Inteligencia Artificial", "La historia del internet", "El ciberacoso"], ans: 1 },
+          { q: "¿Qué diferencia a la tecnología digital de la tradicional?", opts: ["La tradicional usa electricidad, la digital no", "La digital procesa información en código binario", "La tradicional es más rápida", "No hay diferencia real"], ans: 1 },
+          { q: "¿Cuál de estos NO es un comportamiento seguro en internet?", opts: ["Usar contraseñas largas", "Aceptar a todas las personas en redes sociales", "No compartir la ubicación en tiempo real", "Cerrar sesión en equipos públicos"], ans: 1 },
+          { q: "La brecha digital se refiere a:", opts: ["El espacio físico entre dos servidores", "La diferencia en acceso y uso de las TIC entre distintas poblaciones", "Un error en el código de un programa", "La velocidad de descarga de internet"], ans: 1 },
+          { q: "Un beneficio principal de las TIC en la educación es:", opts: ["Que los estudiantes no tengan que pensar", "El acceso instantáneo a información y educación personalizada", "Aumentar el consumo de energía", "Que reemplazan completamente a los profesores"], ans: 1 },
+          { q: "Deepfake se refiere a:", opts: ["Un buceador digital", "Videos o audios manipulados por IA para parecer reales", "Una noticia escrita en un periódico", "Un tipo de conexión a internet profundo"], ans: 1 },
+          { q: "¿Qué significa que un software sea de 'Código Abierto' (Open Source)?", opts: ["Que no tiene contraseña", "Que su código fuente es accesible y puede ser modificado", "Que siempre tiene virus", "Que solo funciona de día"], ans: 1 },
+          { q: "El conjunto de normas de comportamiento general en Internet se conoce como:", opts: ["Reglas web", "Netiqueta", "Constitución Digital", "Código Binario"], ans: 1 },
+          { q: "La fibra óptica sirve principalmente para:", opts: ["Iluminar el interior de las computadoras", "Transmitir datos a alta velocidad usando luz", "Crear ropa inteligente", "Conectar impresoras antiguas"], ans: 1 },
+          { q: "Un riesgo del uso excesivo de las TIC es:", opts: ["Mejorar la visión", "Aislamiento social y sedentarismo", "Aprender demasiados idiomas", "Que el celular se enfríe"], ans: 1 },
+          { q: "Para crear una contraseña segura, es recomendable:", opts: ["Usar tu fecha de nacimiento", "Usar '123456'", "Combinar letras, números, símbolos y mayúsculas", "Usar el nombre de tu mascota"], ans: 2 },
+          { q: "¿Qué tecnología permite que múltiples dispositivos en tu casa se conecten sin cables?", opts: ["Ethernet", "Wi-Fi", "HDMI", "USB"], ans: 1 }
+        ];
+
+        const enlacesRecursos = [
+          { title: "Google for Education", desc: "Cursos sobre ciudadanía digital y seguridad.", url: "https://beinternetawesome.withgoogle.com/es-419_" },
+          { title: "Common Sense Media", desc: "Reseñas y consejos sobre el uso de medios.", url: "https://www.commonsensemedia.org/es" },
+          { title: "Khan Academy", desc: "Cursos sobre computación e historia de la tecnología.", url: "https://es.khanacademy.org/computing" },
+          { title: "UNESCO - TIC", desc: "Información sobre cómo la tecnología transforma el aprendizaje.", url: "https://es.unesco.org/themes/tic-educacion" },
+          { title: "INTEF", desc: "Instituto de Tecnologías Educativas con grandes recursos.", url: "https://intef.es/" }
+        ];
+
+        // --- COMPONENTES SECUNDARIOS ---
+
+        const Navbar = ({ setView, calculateProgressPercent, points, darkMode, setDarkMode }) => (
+          <nav className="sticky top-0 z-50 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-md p-4 transition-colors">
+            <div className="max-w-6xl mx-auto flex justify-between items-center">
+              <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('home')}>
+                <i className="fa-solid fa-globe text-blue-600 dark:text-blue-400 text-3xl animate-pulse"></i>
+                <span className="font-bold text-xl text-gray-800 dark:text-white hidden sm:block">Aventura TIC</span>
+              </div>
+              
+              <div className="flex items-center gap-6">
+                <div className="flex flex-col items-center">
+                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">PROGRESO</span>
+                  <div className="w-24 h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500" style={{ width: `${calculateProgressPercent()}%` }}></div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2 bg-yellow-100 dark:bg-yellow-900/30 px-3 py-1 rounded-full text-yellow-700 dark:text-yellow-400 font-bold">
+                  <i className="fa-solid fa-star text-sm"></i> {points} pts
+                </div>
+                
+                <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors text-gray-800 dark:text-white">
+                  {darkMode ? <i className="fa-solid fa-sun text-xl"></i> : <i className="fa-solid fa-moon text-xl"></i>}
+                </button>
+              </div>
+            </div>
+          </nav>
+        );
+
+        const BadgeToast = ({ showBadgeAnimation }) => {
+          if (!showBadgeAnimation) return null;
+          return (
+            <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-50 animate-bounce">
+              <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 border-2 border-white">
+                <i className="fa-solid fa-medal text-yellow-300 text-2xl"></i>
+                <span className="font-bold">¡Insignia Desbloqueada: {showBadgeAnimation}!</span>
+              </div>
+            </div>
+          );
+        };
+
+        const HomeView = ({ setView }) => (
+          <div className="min-h-[80vh] flex flex-col items-center justify-center text-center p-6 animate-fade-in">
+            <div className="w-32 h-32 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-8 shadow-2xl shadow-blue-500/50 animate-bounce-slow">
+              <i className="fa-solid fa-display text-white text-6xl"></i>
+            </div>
+            <h1 className="text-5xl md:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 mb-6 drop-shadow-sm">
+              Explorando el Mundo de las TIC
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-2xl mb-10">
+              Descubre cómo la tecnología transforma nuestra sociedad, aprende a usarla con responsabilidad y demuestra tus habilidades para obtener tu certificado.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-md">
+              <button 
+                onClick={() => setView('teoria')} 
+                className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-bold py-4 px-8 rounded-2xl shadow-lg transform transition hover:scale-105 flex items-center justify-center gap-2"
+              >
+                <i className="fa-solid fa-circle-play text-xl"></i> Comienza la aventura
+              </button>
+              <button 
+                onClick={() => setView('examen')} 
+                className="bg-white dark:bg-gray-800 text-purple-600 dark:text-purple-400 font-bold py-4 px-8 rounded-2xl shadow-lg border-2 border-purple-200 dark:border-purple-800 transform transition hover:scale-105 flex items-center justify-center gap-2"
+              >
+                <i className="fa-solid fa-graduation-cap text-xl"></i> Ir al Examen
+              </button>
+            </div>
+          </div>
+        );
+
+        const TeoriaView = ({ setView, markProgress }) => {
+          useEffect(() => { markProgress('teoria'); }, [markProgress]);
+          return (
+            <div className="max-w-4xl mx-auto p-6 space-y-12 animate-fade-in text-gray-800 dark:text-gray-200">
+              <div className="text-center">
+                <h2 className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-4">¿Qué son las TIC?</h2>
+                <p className="text-lg leading-relaxed text-left bg-blue-50 dark:bg-gray-800 p-6 rounded-2xl shadow-inner border border-blue-100 dark:border-gray-700">
+                  Las <strong>Tecnologías de la Información y la Comunicación (TIC)</strong> son el conjunto de recursos, herramientas, equipos, programas informáticos, aplicaciones, redes y medios; que permiten la compilación, procesamiento, almacenamiento y transmisión de información como voz, datos, texto, video e imágenes. No se trata solo de computadoras, sino del ecosistema digital completo que define cómo interactuamos hoy en día.
+                </p>
+              </div>
+
+              <div className="relative border-l-4 border-purple-500 pl-6 ml-4 space-y-8">
+                <h3 className="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-6 -ml-10 bg-white dark:bg-gray-900 inline-block px-4">Evolución Histórica</h3>
+                
+                <div className="relative">
+                  <div className="absolute -left-[35px] bg-purple-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-md">1</div>
+                  <h4 className="text-xl font-bold">La Era Analógica (Pre-1970s)</h4>
+                  <p className="mt-2 text-gray-600 dark:text-gray-400">Información transmitida por medios físicos o señales analógicas: teléfono fijo, radio, televisión de tubo y correo postal.</p>
+                </div>
+                
+                <div className="relative">
+                  <div className="absolute -left-[35px] bg-purple-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-md">2</div>
+                  <h4 className="text-xl font-bold">Revolución Digital y PC (1980s-1990s)</h4>
+                  <p className="mt-2 text-gray-600 dark:text-gray-400">Aparición del computador personal. La información se vuelve código binario (0s y 1s).</p>
+                </div>
+
+                <div className="relative">
+                  <div className="absolute -left-[35px] bg-purple-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-md">3</div>
+                  <h4 className="text-xl font-bold">El Boom de Internet (2000s)</h4>
+                  <p className="mt-2 text-gray-600 dark:text-gray-400">El mundo se conecta. La web interactiva (Web 2.0) permite a los usuarios crear contenido. Surgen las redes sociales.</p>
+                </div>
+
+                <div className="relative">
+                  <div className="absolute -left-[35px] bg-purple-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-md">4</div>
+                  <h4 className="text-xl font-bold">Era Móvil e IA (Actualidad)</h4>
+                  <p className="mt-2 text-gray-600 dark:text-gray-400">Smartphones superan a las PC. Todo está en la nube. La Inteligencia Artificial genera contenido y analiza datos gigantescos.</p>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-8">
+                <button onClick={() => setView('componentes')} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2">
+                  Siguiente: Componentes <i className="fa-solid fa-chevron-right"></i>
+                </button>
+              </div>
+            </div>
+          );
+        };
+
+        const ComponentesView = ({ setView, markProgress }) => {
+          const [activeCard, setActiveCard] = useState(null);
+          useEffect(() => { markProgress('componentes'); }, [markProgress]);
+
+          return (
+            <div className="max-w-6xl mx-auto p-6 animate-fade-in">
+              <div className="text-center mb-10">
+                <h2 className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-4">Los Bloques de Construcción</h2>
+                <p className="text-gray-600 dark:text-gray-400">Haz clic en cada tarjeta para explorar detalladamente los componentes fundamentales de las TIC.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {componentesData.map((comp) => (
+                  <div 
+                    key={comp.id} 
+                    onClick={() => setActiveCard(activeCard === comp.id ? null : comp.id)}
+                    className={`cursor-pointer transition-all duration-300 transform ${activeCard === comp.id ? 'col-span-1 md:col-span-2 lg:col-span-3 scale-[1.02]' : 'hover:-translate-y-2'} bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-700`}
+                  >
+                    <div className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 flex items-center gap-4">
+                      <div className="bg-blue-600 text-white p-3 rounded-xl shadow-md w-14 h-14 flex items-center justify-center">
+                        {comp.icon}
+                      </div>
+                      <h3 className="text-2xl font-bold text-gray-800 dark:text-white">{comp.title}</h3>
+                    </div>
+                    
+                    {activeCard === comp.id && (
+                      <div className="p-6 animate-fade-in">
+                        <p className="text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line mb-4">
+                          {comp.content}
+                        </p>
+                        <div className="bg-purple-100 dark:bg-purple-900/30 p-4 rounded-xl">
+                          <strong className="text-purple-800 dark:text-purple-300">Ejemplos y Aplicaciones: </strong>
+                          <span className="text-purple-700 dark:text-purple-400">{comp.examples}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-between pt-12">
+                <button onClick={() => setView('teoria')} className="text-blue-600 dark:text-blue-400 font-bold px-4 py-2 hover:bg-blue-50 dark:hover:bg-gray-800 rounded-xl">Volver</button>
+                <button onClick={() => setView('ventajas')} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2">
+                  Siguiente: Pros y Contras <i className="fa-solid fa-chevron-right"></i>
+                </button>
+              </div>
+            </div>
+          );
+        };
+
+        const VentajasView = ({ setView, markProgress, awardPoints }) => {
+          const [items, setItems] = useState([
+            { id: 1, text: "Acceso instantáneo a bibliotecas globales", category: null, type: 'v' },
+            { id: 2, text: "Brecha digital y desigualdad de acceso", category: null, type: 'd' },
+            { id: 3, text: "Creación de nuevos empleos tecnológicos", category: null, type: 'v' },
+            { id: 4, text: "Aislamiento social por uso excesivo", category: null, type: 'd' },
+            { id: 5, text: "Aprendizaje interactivo y personalizado", category: null, type: 'v' },
+            { id: 6, text: "Riesgos de robo de datos personales", category: null, type: 'd' },
+            { id: 7, text: "Facilita la comunicación a larga distancia", category: null, type: 'v' },
+            { id: 8, text: "Basura electrónica (e-waste) e impacto ambiental", category: null, type: 'd' }
+          ]);
+          const [completed, setCompleted] = useState(false);
+
+          useEffect(() => { markProgress('ventajas'); }, [markProgress]);
+
+          const handleClassify = (id, cat) => {
+            setItems(items.map(item => {
+              if (item.id === id) {
+                if (item.type === cat) {
+                  awardPoints(10, 'Clasificación correcta');
+                  return { ...item, category: cat };
+                } else {
+                  alert("¡Piénsalo mejor! ¿Estás seguro de que esa es la categoría correcta?");
+                  return item;
+                }
+              }
+              return item;
+            }));
+          };
+
+          useEffect(() => {
+            if (items.every(i => i.category !== null) && !completed) {
+              setCompleted(true);
+              awardPoints(100, 'Juego completado', 'badge-ventajas', 'Analista Crítico');
+            }
+          }, [items, completed, awardPoints]);
+
+          return (
+            <div className="max-w-5xl mx-auto p-6 animate-fade-in">
+              <div className="text-center mb-8">
+                <h2 className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-4">El Yin y el Yang Digital</h2>
+                <p className="text-gray-600 dark:text-gray-300">Toca un elemento y clasifícalo como Ventaja o Desventaja de las TIC.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-2xl border-2 border-green-200 dark:border-green-800">
+                  <h3 className="text-2xl font-bold text-green-700 dark:text-green-400 mb-4 flex items-center gap-2">
+                    <i className="fa-regular fa-circle-check"></i> Ventajas
+                  </h3>
+                  <div className="space-y-3">
+                    {items.filter(i => i.category === 'v').map(i => (
+                      <div key={i.id} className="p-3 bg-white dark:bg-gray-800 text-green-800 dark:text-green-300 rounded shadow animate-fade-in">{i.text}</div>
+                    ))}
+                  </div>
+                </div>
+                <div className="bg-red-50 dark:bg-red-900/20 p-6 rounded-2xl border-2 border-red-200 dark:border-red-800">
+                  <h3 className="text-2xl font-bold text-red-700 dark:text-red-400 mb-4 flex items-center gap-2">
+                    <i className="fa-solid fa-triangle-exclamation"></i> Desventajas / Riesgos
+                  </h3>
+                  <div className="space-y-3">
+                    {items.filter(i => i.category === 'd').map(i => (
+                      <div key={i.id} className="p-3 bg-white dark:bg-gray-800 text-red-800 dark:text-red-300 rounded shadow animate-fade-in">{i.text}</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {!completed ? (
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl">
+                  <h4 className="font-bold text-gray-700 dark:text-gray-300 mb-4 text-center">Elementos por clasificar:</h4>
+                  <div className="flex flex-wrap gap-4 justify-center">
+                    {items.filter(i => i.category === null).map(item => (
+                      <div key={item.id} className="flex flex-col items-center gap-2 bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow border border-gray-200 dark:border-gray-600 w-full md:w-auto">
+                        <span className="font-medium text-center text-gray-800 dark:text-gray-200">{item.text}</span>
+                        <div className="flex gap-2 w-full mt-2">
+                          <button onClick={() => handleClassify(item.id, 'v')} className="flex-1 bg-green-500 hover:bg-green-600 text-white py-1 px-3 rounded font-bold text-sm">Es Ventaja</button>
+                          <button onClick={() => handleClassify(item.id, 'd')} className="flex-1 bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded font-bold text-sm">Es Riesgo</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gradient-to-r from-green-400 to-blue-500 p-8 rounded-2xl text-white text-center shadow-xl animate-bounce-slow">
+                  <h3 className="text-3xl font-bold mb-2">¡Análisis Completado!</h3>
+                  <p className="text-lg">Entender ambos lados de la moneda es vital para ser un ciudadano digital crítico.</p>
+                </div>
+              )}
+
+              <div className="flex justify-between pt-12">
+                <button onClick={() => setView('componentes')} className="text-blue-600 dark:text-blue-400 font-bold px-4 py-2 hover:bg-blue-50 dark:hover:bg-gray-800 rounded-xl">Volver</button>
+                <button onClick={() => setView('uso')} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2">
+                  Siguiente: Uso Responsable <i className="fa-solid fa-chevron-right"></i>
+                </button>
+              </div>
+            </div>
+          );
+        };
+
+        const UsoResponsableView = ({ setView, markProgress, awardPoints }) => {
+          const [caseResults, setCaseResults] = useState({});
+          useEffect(() => { markProgress('uso'); }, [markProgress]);
+
+          const handleOptionClick = (topicIndex, isCorrect, feedback) => {
+            if (caseResults[topicIndex]) return; 
+            
+            setCaseResults({ ...caseResults, [topicIndex]: { isCorrect, feedback } });
+            if (isCorrect) {
+              awardPoints(50, 'Decisión ética correcta');
+            }
+          };
+
+          return (
+            <div className="max-w-4xl mx-auto p-6 animate-fade-in">
+              <div className="text-center mb-10">
+                <i className="fa-solid fa-shield-halved text-red-500 text-6xl mx-auto mb-4"></i>
+                <h2 className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-4">Ciudadanía Digital Responsable</h2>
+                <p className="text-gray-600 dark:text-gray-300">Con un gran poder tecnológico, viene una gran responsabilidad.</p>
+              </div>
+
+              <div className="space-y-12">
+                {usoResponsableData.map((tema, index) => (
+                  <div key={index} className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
+                    <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-4">
+                      <h3 className="text-2xl font-bold text-white flex items-center gap-2"><i className="fa-solid fa-lock text-xl"></i> {tema.title}</h3>
+                    </div>
+                    <div className="p-6">
+                      <div className="text-gray-700 dark:text-gray-300 space-y-4 mb-6 text-justify">
+                        {tema.content.map((p, i) => <p key={i}>{p}</p>)}
+                      </div>
+                      
+                      <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+                        <h4 className="font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+                          <i className="fa-solid fa-gamepad text-blue-500"></i> Caso Práctico
+                        </h4>
+                        <p className="italic text-gray-600 dark:text-gray-400 mb-4">"{tema.scenario}"</p>
+                        
+                        <div className="space-y-3">
+                          {tema.options.map((opt, optIndex) => (
+                            <button 
+                              key={optIndex}
+                              onClick={() => handleOptionClick(index, opt.isCorrect, opt.feedback)}
+                              disabled={!!caseResults[index]}
+                              className={`w-full text-left p-4 rounded-xl border transition-all ${
+                                caseResults[index] 
+                                  ? opt.isCorrect 
+                                    ? 'bg-green-100 border-green-500 text-green-800 dark:bg-green-900/50 dark:text-green-200' 
+                                    : caseResults[index].feedback === opt.feedback
+                                      ? 'bg-red-100 border-red-500 text-red-800 dark:bg-red-900/50 dark:text-red-200'
+                                      : 'bg-gray-100 border-gray-300 text-gray-500 dark:bg-gray-800 dark:border-gray-700 opacity-50'
+                                  : 'bg-white dark:bg-gray-800 border-gray-300 hover:border-blue-500 hover:shadow-md dark:border-gray-600 text-gray-700 dark:text-gray-200'
+                              }`}
+                            >
+                              {opt.text}
+                            </button>
+                          ))}
+                        </div>
+                        
+                        {caseResults[index] && (
+                          <div className={`mt-4 p-4 rounded-xl font-bold flex items-start gap-2 ${caseResults[index].isCorrect ? 'text-green-700 bg-green-50 dark:bg-green-900/20 dark:text-green-400' : 'text-red-700 bg-red-50 dark:bg-red-900/20 dark:text-red-400'}`}>
+                            {caseResults[index].isCorrect ? <i className="fa-regular fa-circle-check mt-1"></i> : <i className="fa-regular fa-circle-xmark mt-1"></i>}
+                            <p>{caseResults[index].feedback}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-between pt-12">
+                <button onClick={() => setView('ventajas')} className="text-blue-600 dark:text-blue-400 font-bold px-4 py-2 hover:bg-blue-50 dark:hover:bg-gray-800 rounded-xl">Volver</button>
+                <button onClick={() => setView('juegos')} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2">
+                  Siguiente: Zona de Juegos <i className="fa-solid fa-chevron-right"></i>
+                </button>
+              </div>
+            </div>
+          );
+        };
+
+        const JuegosView = ({ setView, markProgress, awardPoints }) => {
+          useEffect(() => { markProgress('juegos'); }, [markProgress]);
+          
+          const [escapeStage, setEscapeStage] = useState(0);
+          const [escapeCode, setEscapeCode] = useState("");
+
+          const handleEscapeSubmit = () => {
+            const answers = ["NUBE", "HARDWARE", "HUELLA DIGITAL"];
+            if (escapeCode.toUpperCase().trim() === answers[escapeStage]) {
+              if (escapeStage === 2) {
+                awardPoints(200, 'Escape Room superado', 'badge-escape', 'Hacker Ético');
+                setEscapeStage(3);
+              } else {
+                awardPoints(50, 'Acertijo resuelto');
+                setEscapeStage(s => s + 1);
+                setEscapeCode("");
+              }
+            } else {
+              alert("Código incorrecto. Intenta de nuevo.");
+            }
+          };
+
+          return (
+            <div className="max-w-4xl mx-auto p-6 animate-fade-in">
+              <div className="text-center mb-10">
+                <i className="fa-solid fa-gamepad text-purple-500 text-6xl mx-auto mb-4"></i>
+                <h2 className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-4">Escape Room Digital</h2>
+                <p className="text-gray-600 dark:text-gray-300">Resuelve los acertijos para escapar del servidor bloqueado.</p>
+              </div>
+
+              <div className="bg-gray-900 text-green-400 p-8 rounded-2xl shadow-2xl font-mono border border-gray-700 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-green-500 animate-pulse"></div>
+                
+                {escapeStage < 3 ? (
+                  <div className="space-y-6">
+                    <p className="text-sm text-gray-400">SISTEMA BLOQUEADO. PROTOCOLO DE SEGURIDAD ACTIVO. NIVEL {escapeStage + 1}/3.</p>
+                    <div className="text-xl md:text-2xl leading-relaxed text-green-300">
+                      {escapeStage === 0 && "> ACERTIJO 1: Guardo tus fotos y tareas, pero no tengo peso. Estoy en todas partes y en ninguna. ¿Qué soy? (Escribe la palabra de 4 letras)"}
+                      {escapeStage === 1 && "> ACERTIJO 2: Soy el cuerpo de la tecnología. Puedes tocar mi CPU y mis cables. Sin mí, el software es solo un sueño. ¿Qué soy?"}
+                      {escapeStage === 2 && "> ACERTIJO 3: Es el rastro imborrable que dejas al navegar. Como pisadas en cemento fresco. Son dos palabras."}
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row gap-4 mt-8">
+                      <input 
+                        type="text" 
+                        value={escapeCode}
+                        onChange={(e) => setEscapeCode(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleEscapeSubmit()}
+                        placeholder="INGRESE CÓDIGO"
+                        className="bg-black text-green-400 border border-green-600 p-4 rounded w-full focus:outline-none focus:border-green-300 uppercase font-bold tracking-widest"
+                      />
+                      <button 
+                        onClick={handleEscapeSubmit}
+                        className="bg-green-700 hover:bg-green-600 text-black font-bold py-4 px-8 rounded transition-colors whitespace-nowrap"
+                      >
+                        EJECUTAR
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-10 animate-fade-in">
+                    <i className="fa-solid fa-unlock text-green-400 text-6xl mx-auto mb-6 animate-bounce"></i>
+                    <h3 className="text-3xl font-bold text-white mb-2">¡SISTEMA DESBLOQUEADO!</h3>
+                    <p className="text-green-300">Has demostrado gran agudeza mental. Has ganado el título de Hacker Ético.</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-between pt-12">
+                <button onClick={() => setView('uso')} className="text-blue-600 dark:text-blue-400 font-bold px-4 py-2 hover:bg-blue-50 dark:hover:bg-gray-800 rounded-xl">Volver</button>
+                <button onClick={() => setView('examen')} className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg animate-pulse">
+                  Ir al Examen Final <i className="fa-solid fa-graduation-cap"></i>
+                </button>
+              </div>
+            </div>
+          );
+        };
+
+        const ExamenView = ({ setView, examScore, setExamScore, examTaken, setExamTaken, awardPoints }) => {
+          const [currentQ, setCurrentQ] = useState(0);
+          const [answers, setAnswers] = useState(new Array(20).fill(null));
+          const [finished, setFinished] = useState(false);
+
+          useEffect(() => {
+            if (examTaken) setFinished(true);
+          }, [examTaken]);
+
+          const handleAnswer = (optIndex) => {
+            const newAnswers = [...answers];
+            newAnswers[currentQ] = optIndex;
+            setAnswers(newAnswers);
+            
+            if (currentQ < 19) {
+              setTimeout(() => setCurrentQ(currentQ + 1), 300);
+            }
+          };
+
+          const finishExam = () => {
+            if (answers.includes(null)) {
+              alert("Por favor, responde todas las preguntas antes de enviar.");
+              return;
+            }
+            
+            let correctCount = 0;
+            answers.forEach((ans, idx) => {
+              if (ans === examQuestions[idx].ans) correctCount++;
+            });
+            
+            const score = Math.round((correctCount / 20) * 100);
+            setExamScore(score);
+            setExamTaken(true);
+            setFinished(true);
+            
+            if (score >= 80) awardPoints(500, 'Examen Excelente', 'badge-master', 'Maestro TIC');
+            else awardPoints(100, 'Examen Completado');
+          };
+
+          if (finished) {
+            let levelText = "";
+            let colorClass = "";
+            let msg = "";
+            
+            if (examScore >= 80) {
+              levelText = "Nivel Avanzado"; colorClass = "text-green-500"; msg = "¡Felicidades! Has dominado los conceptos. Puedes generar tu certificado.";
+            } else if (examScore >= 60) {
+              levelText = "Nivel Intermedio"; colorClass = "text-yellow-500"; msg = "¡Buen trabajo! Tienes bases sólidas, pero hay espacio para mejorar. ¡Sigue aprendiendo!";
+            } else {
+              levelText = "Nivel Básico"; colorClass = "text-red-500"; msg = "¡No te desanimes! La tecnología es un mundo inmenso. Te invitamos a repasar los conceptos en la sección de Teoría.";
+            }
+
+            return (
+              <div className="max-w-3xl mx-auto p-6 text-center animate-fade-in pt-12">
+                <i className={`fa-solid fa-graduation-cap text-8xl mx-auto mb-6 ${colorClass}`}></i>
+                <h2 className="text-5xl font-bold text-gray-800 dark:text-white mb-4">Resultado del Examen</h2>
+                <div className="text-7xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">{examScore}%</div>
+                <h3 className={`text-3xl font-bold mb-6 ${colorClass}`}>{levelText}</h3>
+                <p className="text-xl text-gray-600 dark:text-gray-300 mb-10">{msg}</p>
+                
+                <div className="flex flex-col sm:flex-row justify-center gap-4">
+                  <button onClick={() => setView('recursos')} className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-xl transition">
+                    Ver Recursos Adicionales
+                  </button>
+                  {examScore >= 80 && (
+                    <button onClick={() => setView('certificado')} className="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                      <i className="fa-solid fa-medal"></i> Obtener Certificado
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div className="max-w-4xl mx-auto p-6 animate-fade-in pt-10">
+              <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-8 border-t-8 border-blue-600 relative">
+                <div className="absolute top-4 right-6 text-sm font-bold text-gray-500 dark:text-gray-400">
+                  Pregunta {currentQ + 1} de 20
+                </div>
+                
+                <div className="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full mb-8 mt-6">
+                  <div className="bg-blue-600 h-2 rounded-full transition-all duration-300" style={{width: `${((currentQ+1)/20)*100}%`}}></div>
+                </div>
+
+                <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-8 min-h-[80px]">
+                  {examQuestions[currentQ].q}
+                </h3>
+
+                <div className="space-y-4">
+                  {examQuestions[currentQ].opts.map((opt, idx) => (
+                    <button 
+                      key={idx}
+                      onClick={() => handleAnswer(idx)}
+                      className={`w-full text-left p-5 rounded-xl border-2 transition-all font-medium text-lg ${
+                        answers[currentQ] === idx 
+                          ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200' 
+                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:border-blue-400 hover:shadow-md'
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex justify-between mt-10 pt-6 border-t border-gray-100 dark:border-gray-700">
+                  <button 
+                    onClick={() => setCurrentQ(Math.max(0, currentQ - 1))}
+                    disabled={currentQ === 0}
+                    className="px-6 py-2 text-gray-500 font-bold disabled:opacity-30"
+                  >
+                    Anterior
+                  </button>
+                  
+                  {currentQ < 19 ? (
+                    <button 
+                      onClick={() => setCurrentQ(currentQ + 1)}
+                      className="bg-gray-800 hover:bg-black dark:bg-gray-200 dark:hover:bg-white text-white dark:text-black px-6 py-2 rounded-xl font-bold transition"
+                    >
+                      Omitir / Siguiente
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={finishExam}
+                      className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg animate-pulse"
+                    >
+                      Finalizar Examen
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        const CertificadoView = ({ setView, examScore }) => {
+          const [name, setName] = useState("");
+          const date = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+
+          const handlePrint = () => {
+            window.print();
+          };
+
+          if (examScore < 80) return <div className="p-10 text-center"><h2 className="text-2xl">No autorizado. Requiere 80% o más.</h2><button onClick={()=>setView('home')} className="mt-4 text-blue-500 underline">Volver al inicio</button></div>;
+
+          return (
+            <div className="max-w-5xl mx-auto p-6 animate-fade-in flex flex-col items-center">
+              
+              <div className="mb-8 w-full max-w-md no-print">
+                <label className="block text-gray-700 dark:text-gray-300 font-bold mb-2">Ingresa tu nombre completo para el certificado:</label>
+                <input 
+                  type="text" 
+                  value={name} 
+                  onChange={e => setName(e.target.value)} 
+                  placeholder="Ej. Juan Pérez"
+                  className="w-full p-3 border-2 border-purple-300 rounded-xl focus:outline-none focus:border-purple-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div id="certificate-area" className="relative bg-white text-gray-900 w-full max-w-[1000px] aspect-[1.414/1] p-12 border-[16px] border-double border-blue-900 shadow-2xl flex flex-col justify-center items-center text-center print:shadow-none print:border-[10px] overflow-hidden">
+                <div className="absolute inset-0 opacity-5 pointer-events-none flex items-center justify-center">
+                  <i className="fa-solid fa-globe text-[40rem] text-blue-900"></i>
+                </div>
+                
+                <div className="relative z-10 w-full">
+                  <h1 className="text-5xl md:text-6xl font-extrabold text-blue-900 mb-2 uppercase tracking-widest font-serif">Certificado de Excelencia</h1>
+                  <div className="w-32 h-1 bg-purple-600 mx-auto mb-8"></div>
+                  
+                  <p className="text-xl md:text-2xl text-gray-600 italic mb-6">Se otorga el presente reconocimiento a:</p>
+                  
+                  <h2 className="text-4xl md:text-6xl font-bold text-purple-800 mb-8 border-b-2 border-gray-300 pb-2 inline-block min-w-[50%]">
+                    {name || "________________________"}
+                  </h2>
+                  
+                  <p className="text-lg md:text-xl text-gray-700 max-w-2xl mx-auto mb-10 leading-relaxed">
+                    Por haber completado con éxito la aventura educativa <strong className="text-blue-900">"Explorando el Mundo de las TIC"</strong>, demostrando un nivel Avanzado ({examScore}%) en la comprensión de hardware, software, seguridad digital y uso responsable de las tecnologías.
+                  </p>
+                  
+                  <div className="flex justify-between items-end w-full px-10 mt-12">
+                    <div className="text-center">
+                      <p className="text-lg font-bold border-b border-black w-40 mb-2 pb-1 mx-auto text-blue-900" style={{fontFamily: 'cursive'}}>Profesor TIC</p>
+                      <p className="text-sm text-gray-500 uppercase font-bold">Facilitador</p>
+                    </div>
+                    
+                    <div className="flex flex-col items-center">
+                      <div className="w-24 h-24 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center shadow-lg border-4 border-yellow-200 mb-2">
+                        <i className="fa-solid fa-medal text-white text-5xl"></i>
+                      </div>
+                      <p className="text-xs text-gray-500 font-bold uppercase">Sello de Oro</p>
+                    </div>
+
+                    <div className="text-center">
+                      <p className="text-lg font-bold border-b border-black w-40 mb-2 pb-1 mx-auto">{date}</p>
+                      <p className="text-sm text-gray-500 uppercase font-bold">Fecha de Emisión</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button 
+                onClick={handlePrint}
+                disabled={!name}
+                className="mt-10 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-10 rounded-xl shadow-xl flex items-center gap-3 transition-transform hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 no-print"
+              >
+                <i className="fa-solid fa-download text-xl"></i> Descargar / Imprimir PDF
+              </button>
+              <p className="text-sm text-gray-500 mt-3 no-print">Usa Ctrl+P o presiona el botón. (Asegúrate de configurar márgenes en "Ninguno" y fondo activado en tu impresora).</p>
+            </div>
+          );
+        };
+
+        const RecursosView = () => (
+          <div className="max-w-4xl mx-auto p-6 animate-fade-in pt-10 text-gray-800 dark:text-gray-200">
+            <div className="text-center mb-10">
+              <h2 className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-4">Aprende Más</h2>
+              <p className="text-lg text-gray-600 dark:text-gray-300">¿Quedaste con ganas de más? Explora estas plataformas educativas seguras y gratuitas.</p>
+            </div>
+            
+            <div className="grid gap-6">
+              {enlacesRecursos.map((rec, i) => (
+                <div key={i} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow border-l-4 border-blue-500 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                      <i className="fa-solid fa-file-lines text-blue-500"></i> {rec.title}
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400">{rec.desc}</p>
+                  </div>
+                  <a 
+                    href={rec.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 font-bold py-2 px-6 rounded-lg transition whitespace-nowrap"
+                  >
+                    Visitar sitio
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+        // --- COMPONENTE PRINCIPAL APP ---
+        function App() {
+          const [view, setView] = useState('home');
+          const [darkMode, setDarkMode] = useState(false);
+          const [points, setPoints] = useState(0);
+          const [badges, setBadges] = useState([]);
+          const [progress, setProgress] = useState({ teoria: false, componentes: false, ventajas: false, uso: false, juegos: false });
+          const [showBadgeAnimation, setShowBadgeAnimation] = useState(null);
+          
+          const [examTaken, setExamTaken] = useState(false);
+          const [examScore, setExamScore] = useState(0);
+
+          useEffect(() => {
+            if (darkMode) document.documentElement.classList.add('dark');
+            else document.documentElement.classList.remove('dark');
+          }, [darkMode]);
+
+          const awardPoints = useCallback((amount, reason, badgeId = null, badgeName = null) => {
+            setPoints(p => p + amount);
+            if (badgeId && !badges.includes(badgeId)) {
+              setBadges(b => [...b, badgeId]);
+              setShowBadgeAnimation(badgeName);
+              setTimeout(() => setShowBadgeAnimation(null), 3000);
+            }
+          }, [badges]);
+
+          const markProgress = useCallback((section) => {
+            if (!progress[section]) {
+              setProgress(p => ({ ...p, [section]: true }));
+              awardPoints(100, `Sección ${section} completada`, `badge-${section}`, `Explorador de ${section}`);
+            }
+          }, [progress, awardPoints]);
+
+          const calculateProgressPercent = () => {
+            const total = Object.keys(progress).length;
+            const done = Object.values(progress).filter(Boolean).length;
+            return Math.round((done / total) * 100);
+          };
+
+          return (
+            <div className={`min-h-screen font-sans transition-colors duration-300 ${darkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
+              
+              <Navbar setView={setView} calculateProgressPercent={calculateProgressPercent} points={points} darkMode={darkMode} setDarkMode={setDarkMode} />
+              <BadgeToast showBadgeAnimation={showBadgeAnimation} />
+
+              <main className="pb-20">
+                {view === 'home' && <HomeView setView={setView} />}
+                {view === 'teoria' && <TeoriaView setView={setView} markProgress={markProgress} />}
+                {view === 'componentes' && <ComponentesView setView={setView} markProgress={markProgress} />}
+                {view === 'ventajas' && <VentajasView setView={setView} markProgress={markProgress} awardPoints={awardPoints} />}
+                {view === 'uso' && <UsoResponsableView setView={setView} markProgress={markProgress} awardPoints={awardPoints} />}
+                {view === 'juegos' && <JuegosView setView={setView} markProgress={markProgress} awardPoints={awardPoints} />}
+                {view === 'examen' && <ExamenView setView={setView} examScore={examScore} setExamScore={setExamScore} examTaken={examTaken} setExamTaken={setExamTaken} awardPoints={awardPoints} />}
+                {view === 'certificado' && <CertificadoView setView={setView} examScore={examScore} />}
+                {view === 'recursos' && <RecursosView />}
+              </main>
+
+              <footer className="fixed bottom-0 z-50 w-full bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-2 flex justify-start sm:justify-center gap-2 overflow-x-auto no-print">
+                {['home', 'teoria', 'componentes', 'ventajas', 'uso', 'juegos', 'examen', 'recursos'].map(v => (
+                  <button 
+                    key={v}
+                    onClick={() => setView(v)}
+                    className={`px-3 py-1 text-xs md:text-sm font-bold rounded-full capitalize whitespace-nowrap ${view === v ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                  >
+                    {v === 'uso' ? 'Uso Responsable' : v}
+                  </button>
+                ))}
+              </footer>
+
+            </div>
+          );
+        }
+
+        // Montar la aplicación
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
